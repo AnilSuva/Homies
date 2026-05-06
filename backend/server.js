@@ -6,10 +6,21 @@ const session = require('express-session');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const GitHubStrategy = require('passport-github2').Strategy;
+const nodemailer = require('nodemailer');
+const crypto = require('crypto');
 const { connectDB, User, Project, Contract, Message } = require('./db');
 
 // Initialize Express
 const app = express();
+
+// Nodemailer Transporter
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
 // Connect to Database
 connectDB();
@@ -104,6 +115,75 @@ passport.use(new GitHubStrategy({
 }));
 
 // Authentication Routes
+
+// Email OTP Auth
+app.post('/api/auth/send-otp', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: 'Email is required' });
+
+    // Generate 6 digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    let user = await User.findOne({ email });
+    if (!user) {
+      // Create new user if not exists
+      user = new User({ email, name: email.split('@')[0] });
+    }
+    user.otp = otp;
+    user.otpExpires = otpExpires;
+    await user.save();
+
+    // Send Email
+    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+      const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: 'Your Homies Verification Code',
+        text: `Your OTP is: ${otp}. It will expire in 10 minutes.`,
+      };
+      await transporter.sendMail(mailOptions);
+      console.log(`OTP sent to ${email}`);
+    } else {
+      console.log(`[DEV MODE] OTP for ${email}: ${otp}`);
+    }
+
+    res.json({ message: 'OTP sent successfully' });
+  } catch (error) {
+    console.error('Send OTP Error:', error);
+    res.status(500).json({ message: 'Error sending OTP' });
+  }
+});
+
+app.post('/api/auth/verify-otp', async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) return res.status(400).json({ message: 'Email and OTP are required' });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    if (user.otp !== otp || user.otpExpires < new Date()) {
+      return res.status(400).json({ message: 'Invalid or expired OTP' });
+    }
+
+    // Clear OTP
+    user.otp = null;
+    user.otpExpires = null;
+    await user.save();
+
+    // Log the user in
+    req.login(user, (err) => {
+      if (err) return res.status(500).json({ message: 'Login error' });
+      res.json({ message: 'Logged in successfully', user });
+    });
+  } catch (error) {
+    console.error('Verify OTP Error:', error);
+    res.status(500).json({ message: 'Error verifying OTP' });
+  }
+});
+
 // Google Auth
 app.get('/auth/google', passport.authenticate('google', {
   scope: ['profile', 'email'],
@@ -206,6 +286,23 @@ app.get('/api/projects', isAuthenticated, async (req, res) => {
   }
 });
 
+// Delete a project (buyer)
+app.delete('/api/projects/:id', isAuthenticated, async (req, res) => {
+  try {
+    const project = await Project.findById(req.params.id);
+    if (!project) return res.status(404).json({ message: 'Project not found' });
+
+    if (project.buyerId?.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to delete this project' });
+    }
+
+    await Project.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Project deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting project', error: error.message });
+  }
+});
+
 // Get user statistics
 app.get('/api/user/stats', isAuthenticated, async (req, res) => {
   try {
@@ -295,6 +392,8 @@ app.get('/api/gigs', isAuthenticated, async (req, res) => {
     let query = { status: 'open', buyerId: null };
     if (filter === 'my') {
       query.sellerId = req.user._id;
+    } else {
+      query.isActive = { $ne: false };
     }
 
     const gigs = await Project.find(query)
@@ -336,6 +435,45 @@ app.post('/api/gigs', isAuthenticated, async (req, res) => {
     res.status(500).json({ message: 'Error creating gig', error: error.message });
   }
 });
+
+// Toggle active status of a gig
+app.put('/api/gigs/:id/toggle-active', isAuthenticated, async (req, res) => {
+  try {
+    const gig = await Project.findById(req.params.id);
+    if (!gig) return res.status(404).json({ message: 'Gig not found' });
+    
+    if (gig.sellerId?.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to modify this gig' });
+    }
+
+    // Default isActive to true if undefined
+    if (gig.isActive === undefined) gig.isActive = true;
+    
+    gig.isActive = !gig.isActive;
+    await gig.save();
+    res.json({ message: 'Gig status updated', gig });
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating gig status', error: error.message });
+  }
+});
+
+// Delete a gig
+app.delete('/api/gigs/:id', isAuthenticated, async (req, res) => {
+  try {
+    const gig = await Project.findById(req.params.id);
+    if (!gig) return res.status(404).json({ message: 'Gig not found' });
+
+    if (gig.sellerId?.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to delete this gig' });
+    }
+
+    await Project.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Gig deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting gig', error: error.message });
+  }
+});
+
 // CONTRACT/ORDER ROUTES
 // Book a gig (Buyer)
 app.post('/api/contracts/book', isAuthenticated, async (req, res) => {

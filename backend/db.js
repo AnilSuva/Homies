@@ -58,6 +58,14 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  otp: {
+    type: String,
+    default: null,
+  },
+  otpExpires: {
+    type: Date,
+    default: null,
+  },
   createdAt: {
     type: Date,
     default: Date.now,
@@ -81,6 +89,10 @@ const projectSchema = new mongoose.Schema({
   budget: {
     type: Number,
     required: true,
+  },
+  isActive: {
+    type: Boolean,
+    default: true,
   },
   status: {
     type: String,
