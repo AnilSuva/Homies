@@ -35,6 +35,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
 
 // Session Configuration
+app.set('trust proxy', 1); // Trust first proxy (required for Render)
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your_session_secret',
   resave: false,
@@ -42,7 +43,7 @@ app.use(session({
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    sameSite: 'lax',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
   },
 }));
 
