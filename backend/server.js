@@ -195,9 +195,9 @@ app.get('/auth/google', passport.authenticate('google', {
 }));
 
 app.get('/auth/google/callback', passport.authenticate('google', {
-  failureRedirect: `${process.env.FRONTEND_URL}/login?error=auth_failed`,
+  failureRedirect: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/login?error=auth_failed`,
 }), (req, res) => {
-  res.redirect(`${process.env.FRONTEND_URL}/dashboard?user=${req.user._id}`);
+  res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard?user=${req.user._id}`);
 });
 
 // GitHub Auth
@@ -206,9 +206,9 @@ app.get('/auth/github', passport.authenticate('github', {
 }));
 
 app.get('/auth/github/callback', passport.authenticate('github', {
-  failureRedirect: `${process.env.FRONTEND_URL}/login?error=auth_failed`,
+  failureRedirect: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/login?error=auth_failed`,
 }), (req, res) => {
-  res.redirect(`${process.env.FRONTEND_URL}/dashboard?user=${req.user._id}`);
+  res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard?user=${req.user._id}`);
 });
 
 // Get Current User
