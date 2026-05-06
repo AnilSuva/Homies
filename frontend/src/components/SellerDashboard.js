@@ -16,7 +16,6 @@ const SellerDashboard = ({ user }) => {
   const [activeChat, setActiveChat] = useState(null);
   const [activeTab, setActiveTab] = useState('active');
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [loading, setLoading] = useState(true);
   useEffect(() => {
     fetchUserProfile();
     fetchStats();
@@ -59,11 +58,9 @@ const SellerDashboard = ({ user }) => {
       } else {
         setGigs([]);
       }
-      setLoading(false);
     } catch (error) {
       console.error('Error fetching gigs:', error);
       setGigs([]);
-      setLoading(false);
     }
   };
 
