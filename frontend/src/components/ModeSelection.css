@@ -1,0 +1,123 @@
+/* CSS Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  background-color: #f8fafc;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.mode-container {
+  width: 100%;
+  max-width: 500px;
+  background: white;
+  padding: 2.5rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  margin: 2rem auto;
+}
+
+.logo {
+  margin-bottom: 1.5rem;
+}
+
+.logo h1 {
+  color: #3b82f6;
+  font-size: 1.8rem;
+}
+
+.welcome-message {
+  margin-bottom: 2rem;
+}
+
+.welcome-message h2 {
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.welcome-message p {
+  color: #64748b;
+}
+
+.mode-selection {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.mode-card {
+  flex: 1;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.mode-card:hover {
+  border-color: #3b82f6;
+  transform: translateY(-5px);
+}
+
+.mode-card.selected {
+  border-color: #3b82f6;
+  background-color: #f0f7ff;
+}
+
+.mode-icon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  color: #3b82f6;
+}
+
+.mode-title {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #1e293b;
+}
+
+.mode-description {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.continue-btn {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.continue-btn:hover:not(:disabled) {
+  background-color: #2563eb;
+}
+
+.continue-btn:disabled {
+  background-color: #cbd5e1;
+  cursor: not-allowed;
+}
+
+.logout-link {
+  display: inline-block;
+  margin-top: 1.5rem;
+  color: #64748b;
+  text-decoration: none;
+}
+
+.logout-link:hover {
+  text-decoration: underline;
+}
