@@ -14,6 +14,7 @@ const ChatModal = ({ isOpen, onClose, contractId, currentUserId, chatTitle }) =>
       const interval = setInterval(fetchMessages, 5000);
       return () => clearInterval(interval);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, contractId]);
 
   useEffect(() => {
